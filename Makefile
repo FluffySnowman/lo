@@ -42,19 +42,11 @@ help:
 
 
 run:
-	@echo "| running rust code |"
+	@echo "| running.......... |"
 	cd $(LO_SRC_DIR); \
 		echo "| entered directory |>" $$PWD; \
 		echo "| running code...   |"; \
-		cargo run;
-
-
-watch: 
-	@echo "| watching rust code |"
-	cd $(LO_SRC_DIR); \
-		echo "| entered directory |>" $$PWD; \
-		echo "| watching code...  |"; \
-		cargo watch -x run;
+		go run main.go;
 
 
 watchexec:
@@ -62,7 +54,7 @@ watchexec:
 	cd $(LO_SRC_DIR); \
 		echo "| entered directory |>" $$PWD; \
 		echo "| watching code...  |"; \
-		watchexec -r "cargo run";
+		watchexec -r "go run main.go";
 
 
 
