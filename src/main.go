@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // Function to format file sizes
@@ -44,21 +44,24 @@ func getGitStatus(path string) string {
 		return ""
 	}
 
-	// Check file status
-	fileStatus := status.File(path)
-	if fileStatus.Staging != plumbing.Untracked || fileStatus.Worktree != plumbing.Untracked {
-		if fileStatus.Worktree == plumbing.Modified {
-			return "M"
-		}
-		if fileStatus.Worktree == plumbing.Untracked {
-			return "??"
-		}
-		if fileStatus.Worktree == plumbing.Ignored {
-			return "!!"
-		}
+	fileStatus, exists := status[path]
+	if !exists {
+		return ""
 	}
 
-	return ""
+	// Construct the status string based on the status of the file
+	statusStrings := []string{}
+	if fileStatus.Staging != git.Unmodified {
+		statusStrings = append(statusStrings, "Staged")
+	}
+	if fileStatus.Worktree != git.Unmodified {
+		statusStrings = append(statusStrings, "Modified")
+	}
+	// if fileStatus.Extra != git.Unmodified {
+	// 	statusStrings = append(statusStrings, "Untracked")
+	// }
+
+	return strings.Join(statusStrings, " ")
 }
 
 func main() {
