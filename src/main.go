@@ -12,11 +12,10 @@ import (
 	"github.com/fatih/color"
 )
 
-// Helper to format file sizes.
 func formatSize(size int64) string {
 	const (
 		KB int64 = 1024
-		MB       = 1024 * KB
+		MB       = KB * KB
 	)
 	if size >= MB {
 		return fmt.Sprintf("%.2f MB", float64(size)/float64(MB))
@@ -26,7 +25,6 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%d bytes", size)
 }
 
-// Helper to format modification time.
 func timeSince(modTime time.Time) string {
 	duration := time.Since(modTime)
 	if minutes := duration.Minutes(); minutes < 60 {
@@ -35,7 +33,6 @@ func timeSince(modTime time.Time) string {
 	return fmt.Sprintf("%dh ago", int(duration.Hours()))
 }
 
-// Helper to prepend Git status.
 func prependGitStatus(filename, path string) string {
 	cmd := exec.Command("git", "status", "--short", path)
 	output, err := cmd.CombinedOutput()
@@ -75,22 +72,10 @@ func main() {
 		return
 	}
 
-	// Calculate maximum lengths for dynamic spacing
-	maxNameLength := 0
-	for _, file := range files {
-		filename := prependGitStatus(file.Name(), filepath.Join(cwd, file.Name()))
-		if len(filename) > maxNameLength {
-			maxNameLength = len(filename)
-		}
-	}
-
-	// Print headers
-	fmt.Printf("%-4s %-"+fmt.Sprint(maxNameLength)+"s %-10s %-15s\n", "ID", "File", "Size", "Modified")
-
-	// Print file details
+	fmt.Printf("%-4s %-10s %-15s %s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
 		filenameWithStatus := prependGitStatus(file.Name(), filepath.Join(cwd, file.Name()))
-		fmt.Printf("%-4d %-"+fmt.Sprint(maxNameLength)+"s %-10s %-15s\n",
-			i, filenameWithStatus, formatSize(file.Size()), timeSince(file.ModTime()))
+		fmt.Printf("%-4d %-10s %-15s %s\n",
+			i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
 	}
 }
