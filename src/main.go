@@ -122,11 +122,14 @@ func main() {
 		}
 	}
 
-	fileNameFormat := fmt.Sprintf("%%-4d\t %%-10s\t %%-15s\t %%-%ds\n", maxFileNameLength)
-	fmt.Printf("%-4s\t %-10s\t %-15s %s\n", "ID", "Size", "Modified", "File")
+	fmt.Printf("\nCWD: %s\tTotal Filez %d\n\n", color.New(color.FgHiMagenta).Sprint(cwd), len(files))
+	// fmt.Printf("Total files: %d\n", len(files))
+	fmt.Printf("%-4s\t %-10s\t %-25s\t %s\n", "ID", "Size", "Modified", "File") // Increased 'Modified' width and added two tabs
 	for i, file := range files {
 		filename := printColoredName(file)
 		filenameWithStatus := prependGitStatus(filename, filepath.Join(cwd, file.Name()))
-		fmt.Printf(fileNameFormat, i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
+		// Print with modified format, ensuring files column starts after two tabs from the 'Modified' column
+		fmt.Printf("%-4d\t %-10s\t %-25s\t\t %s\n", i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
 	}
+	println();
 }
