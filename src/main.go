@@ -12,6 +12,7 @@ import (
 	"github.com/fatih/color"
 )
 
+// Function to format and color file sizes
 func formatSize(size int64) string {
 	const (
 		KB int64 = 1024
@@ -25,6 +26,7 @@ func formatSize(size int64) string {
 	return color.New(color.FgHiRed).Sprintf("%d bytes", size)
 }
 
+// Function to get and color Git status of a file
 func getGitStatus(path string) string {
 	cmd := exec.Command("git", "status", "--short", path)
 	output, err := cmd.CombinedOutput()
@@ -64,20 +66,22 @@ func main() {
 		return
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.Debug)
+	// Set up the tab writer for formatted output
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 2, ' ', 0)
 
-	fmt.Fprintln(w, "File\tSize\tStatus\t")
+	fmt.Fprintln(w, "File\tSize\t Status\t|")
 
 	for _, file := range files {
 		if !file.IsDir() {
 			filePath := filepath.Join(cwd, file.Name())
 			size := file.Size()
 			formattedSize := formatSize(size)
-			gitStatus := getGitStatus(filePath) 
+			gitStatus := getGitStatus(filePath) // Now using the absolute file path
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t\n", file.Name(), formattedSize, gitStatus)
+			fmt.Fprintf(w, "%s\t| %s\t\t\t| %s\t|\n", file.Name(), formattedSize, gitStatus)
 		}
 	}
 
+	// Ensure output is flushed and displayed correctly
 	w.Flush()
 }
