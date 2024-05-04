@@ -7,49 +7,58 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"text/tabwriter"
+	"time"
 
 	"github.com/fatih/color"
 )
 
-// Function to format and color file sizes
+// Helper to format file sizes.
 func formatSize(size int64) string {
 	const (
 		KB int64 = 1024
 		MB       = 1024 * KB
 	)
 	if size >= MB {
-		return color.New(color.FgHiYellow).Sprintf("%.2f MB", float64(size)/float64(MB))
+		return fmt.Sprintf("%.2f MB", float64(size)/float64(MB))
 	} else if size >= KB {
-		return color.New(color.FgHiCyan).Sprintf("%.2f KB", float64(size)/float64(KB))
+		return fmt.Sprintf("%.2f KB", float64(size)/float64(KB))
 	}
-	return color.New(color.FgHiRed).Sprintf("%d bytes", size)
+	return fmt.Sprintf("%d bytes", size)
 }
 
-// Function to get and color Git status of a file
-func getGitStatus(path string) string {
+// Helper to format modification time.
+func timeSince(modTime time.Time) string {
+	duration := time.Since(modTime)
+	if minutes := duration.Minutes(); minutes < 60 {
+		return fmt.Sprintf("%d min ago", int(minutes))
+	}
+	return fmt.Sprintf("%dh ago", int(duration.Hours()))
+}
+
+// Helper to prepend Git status.
+func prependGitStatus(filename, path string) string {
 	cmd := exec.Command("git", "status", "--short", path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return ""
+		return filename
 	}
 	status := string(output)
 	if len(status) < 2 {
-		return ""
+		return filename
 	}
 
 	statusCode := strings.TrimSpace(status[:2])
 	switch statusCode {
 	case "M ":
-		return color.New(color.FgYellow).Sprint("Modified")
+		return color.New(color.FgYellow).Sprintf("⎇ %s", filename)
 	case "??":
-		return color.New(color.FgRed).Sprint("Untracked")
+		return color.New(color.FgRed).Sprintf("⎇ %s", filename)
 	case "A ":
-		return color.New(color.FgGreen).Sprint("Added")
+		return color.New(color.FgGreen).Sprintf("⎇ %s", filename)
 	case "D ":
-		return color.New(color.FgMagenta).Sprint("Deleted")
+		return color.New(color.FgMagenta).Sprintf("⎇ %s", filename)
 	default:
-		return color.New(color.FgBlue).Sprint(statusCode)
+		return color.New(color.FgBlue).Sprintf("⎇ %s", filename)
 	}
 }
 
@@ -66,22 +75,22 @@ func main() {
 		return
 	}
 
-	// Set up the tab writer for formatted output
-	w := tabwriter.NewWriter(os.Stdout, 1, 1, 2, ' ', 0)
-
-	fmt.Fprintln(w, "File\tSize\t Status\t|")
-
+	// Calculate maximum lengths for dynamic spacing
+	maxNameLength := 0
 	for _, file := range files {
-		if !file.IsDir() {
-			filePath := filepath.Join(cwd, file.Name())
-			size := file.Size()
-			formattedSize := formatSize(size)
-			gitStatus := getGitStatus(filePath) // Now using the absolute file path
-
-			fmt.Fprintf(w, "%s\t| %s\t\t\t| %s\t|\n", file.Name(), formattedSize, gitStatus)
+		filename := prependGitStatus(file.Name(), filepath.Join(cwd, file.Name()))
+		if len(filename) > maxNameLength {
+			maxNameLength = len(filename)
 		}
 	}
 
-	// Ensure output is flushed and displayed correctly
-	w.Flush()
+	// Print headers
+	fmt.Printf("%-4s %-"+fmt.Sprint(maxNameLength)+"s %-10s %-15s\n", "ID", "File", "Size", "Modified")
+
+	// Print file details
+	for i, file := range files {
+		filenameWithStatus := prependGitStatus(file.Name(), filepath.Join(cwd, file.Name()))
+		fmt.Printf("%-4d %-"+fmt.Sprint(maxNameLength)+"s %-10s %-15s\n",
+			i, filenameWithStatus, formatSize(file.Size()), timeSince(file.ModTime()))
+	}
 }
