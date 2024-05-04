@@ -47,16 +47,23 @@ func prependGitStatus(filename, path string) string {
 	statusCode := strings.TrimSpace(status[:2])
 	switch statusCode {
 	case "M ":
-		return color.New(color.FgYellow).Sprintf("⎇ %s", filename)
+		return color.New(color.FgYellow).Sprintf(" %s", filename)
 	case "??":
-		return color.New(color.FgRed).Sprintf("⎇ %s", filename)
+		return color.New(color.FgRed).Sprintf(" %s", filename)
 	case "A ":
-		return color.New(color.FgGreen).Sprintf("⎇ %s", filename)
+		return color.New(color.FgGreen).Sprintf(" %s", filename)
 	case "D ":
-		return color.New(color.FgMagenta).Sprintf("⎇ %s", filename)
+		return color.New(color.FgMagenta).Sprintf(" %s", filename)
 	default:
-		return color.New(color.FgBlue).Sprintf("⎇ %s", filename)
+		return color.New(color.FgBlue).Sprintf(" %s", filename)
 	}
+}
+
+func printColoredName(file os.FileInfo) string {
+	if file.IsDir() {
+		return color.New(color.FgHiBlue, color.Bold).Sprint(file.Name())
+	}
+	return color.New(color.FgWhite).Sprint(file.Name())
 }
 
 func main() {
@@ -74,7 +81,7 @@ func main() {
 
 	fmt.Printf("%-4s %-10s %-15s %s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
-		filenameWithStatus := prependGitStatus(file.Name(), filepath.Join(cwd, file.Name()))
+		filenameWithStatus := prependGitStatus(printColoredName(file), filepath.Join(cwd, file.Name()))
 		fmt.Printf("%-4d %-10s %-15s %s\n",
 			i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
 	}
