@@ -6,12 +6,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/fatih/color"
 )
+
+func removeANSICodes(input string) string {
+	re := regexp.MustCompile("\x1b\\[[0-9;]*m")
+	return re.ReplaceAllString(input, "")
+}
 
 func formatSize(size int64) string {
 	const (
@@ -97,7 +103,6 @@ func main() {
 		return
 	}
 
-	// Sort files by modification time, directories first
 	sort.Slice(files, func(i, j int) bool {
 		if files[i].IsDir() && !files[j].IsDir() {
 			return true
@@ -107,10 +112,21 @@ func main() {
 		return files[i].ModTime().After(files[j].ModTime())
 	})
 
+	maxFileNameLength := 0
+	for _, file := range files {
+		filename := printColoredName(file)
+		filenameWithStatus := prependGitStatus(filename, filepath.Join(cwd, file.Name()))
+		cleanFileName := removeANSICodes(filenameWithStatus)
+		if len(cleanFileName) > maxFileNameLength {
+			maxFileNameLength = len(cleanFileName)
+		}
+	}
+
+	fileNameFormat := fmt.Sprintf("%%-4d\t %%-10s\t %%-15s\t %%-%ds\n", maxFileNameLength)
 	fmt.Printf("%-4s\t %-10s\t %-15s %s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
-		filenameWithStatus := prependGitStatus(printColoredName(file), filepath.Join(cwd, file.Name()))
-		fmt.Printf("%-4d\t %-10s\t %-15s\t %s\n",
-			i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
+		filename := printColoredName(file)
+		filenameWithStatus := prependGitStatus(filename, filepath.Join(cwd, file.Name()))
+		fmt.Printf(fileNameFormat, i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
 	}
 }
