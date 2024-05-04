@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -16,21 +17,30 @@ func formatSize(size int64) string {
 	const (
 		KB int64 = 1024
 		MB       = KB * KB
+		GB       = MB * KB
 	)
-	if size >= MB {
-		return fmt.Sprintf("%.2f MB", float64(size)/float64(MB))
-	} else if size >= KB {
-		return fmt.Sprintf("%.2f KB", float64(size)/float64(KB))
+	switch {
+	case size >= GB:
+		return color.New(color.FgHiRed).Sprintf("%.2f GB", float64(size)/float64(GB))
+	case size >= MB:
+		return color.New(color.FgHiYellow).Sprintf("%.2f MB", float64(size)/float64(MB))
+	case size >= KB:
+		return color.New(color.FgHiGreen).Sprintf("%.2f KB", float64(size)/float64(KB))
+	default:
+		return color.New(color.FgHiCyan).Sprintf("%d bytes", size)
 	}
-	return fmt.Sprintf("%d bytes", size)
 }
 
 func timeSince(modTime time.Time) string {
-	duration := time.Since(modTime)
-	if minutes := duration.Minutes(); minutes < 60 {
-		return fmt.Sprintf("%d min ago", int(minutes))
+	hours := time.Since(modTime).Hours()
+	switch {
+	case hours < 1:
+		return color.New(color.FgHiGreen).Sprintf("%d min ago", int(time.Since(modTime).Minutes()))
+	case hours < 24:
+		return color.New(color.FgHiYellow).Sprintf("%dh ago", int(hours))
+	default:
+		return color.New(color.FgHiRed).Sprintf("%dd ago", int(hours/24))
 	}
-	return fmt.Sprintf("%dh ago", int(duration.Hours()))
 }
 
 func prependGitStatus(filename, path string) string {
@@ -66,6 +76,14 @@ func printColoredName(file os.FileInfo) string {
 	return color.New(color.FgWhite).Sprint(file.Name())
 }
 
+type byModTime []os.FileInfo
+
+func (a byModTime) Len() int      { return len(a) }
+func (a byModTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byModTime) Less(i, j int) bool {
+	return a[i].ModTime().After(a[j].ModTime())
+}
+
 func main() {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -79,10 +97,20 @@ func main() {
 		return
 	}
 
-	fmt.Printf("%-4s %-10s %-15s %s\n", "ID", "Size", "Modified", "File")
+	// Sort files by modification time, directories first
+	sort.Slice(files, func(i, j int) bool {
+		if files[i].IsDir() && !files[j].IsDir() {
+			return true
+		} else if !files[i].IsDir() && files[j].IsDir() {
+			return false
+		}
+		return files[i].ModTime().After(files[j].ModTime())
+	})
+
+	fmt.Printf("%-4s\t %-10s\t %-15s %s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
 		filenameWithStatus := prependGitStatus(printColoredName(file), filepath.Join(cwd, file.Name()))
-		fmt.Printf("%-4d %-10s %-15s %s\n",
+		fmt.Printf("%-4d\t %-10s\t %-15s\t %s\n",
 			i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
 	}
 }
