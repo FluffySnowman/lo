@@ -83,25 +83,19 @@ func printColoredName(file os.FileInfo) string {
 	return color.New(color.FgWhite).Sprint(file.Name())
 }
 
-type byModTime []os.FileInfo
-
-func (a byModTime) Len() int      { return len(a) }
-func (a byModTime) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a byModTime) Less(i, j int) bool {
-	return a[i].ModTime().After(a[j].ModTime())
-}
-
 func gitDiffStat(path string) string {
 	cmd := exec.Command("git", "diff", "--numstat", path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "n/a"
+		return ""
 	}
 	stats := strings.Split(strings.TrimSpace(string(output)), "\t")
 	if len(stats) < 3 {
-		return "n/a"
+		return ""
 	}
-	return fmt.Sprintf("+%s/-%s", stats[0], stats[1])
+	additions := color.New(color.FgGreen).Sprintf("+%s", stats[0])
+	deletions := color.New(color.FgRed).Sprintf("-%s", stats[1])
+	return additions + " " + deletions
 }
 
 var detailMode bool
