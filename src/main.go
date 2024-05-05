@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -90,7 +91,27 @@ func (a byModTime) Less(i, j int) bool {
 	return a[i].ModTime().After(a[j].ModTime())
 }
 
+func gitDiffStat(path string) string {
+	cmd := exec.Command("git", "diff", "--numstat", path)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "n/a"
+	}
+	stats := strings.Split(strings.TrimSpace(string(output)), "\t")
+	if len(stats) < 3 {
+		return "n/a"
+	}
+	return fmt.Sprintf("+%s/-%s", stats[0], stats[1])
+}
+
+var detailMode bool
+
+func init() {
+	flag.BoolVar(&detailMode, "d", false, "Show detailed file change stats")
+}
+
 func main() {
+	flag.Parse()
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Println("Error getting current working directory:", err)
@@ -112,23 +133,17 @@ func main() {
 		return files[i].ModTime().After(files[j].ModTime())
 	})
 
-	maxFileNameLength := 0
-	for _, file := range files {
-		filename := printColoredName(file)
-		filenameWithStatus := prependGitStatus(filename, filepath.Join(cwd, file.Name()))
-		cleanFileName := removeANSICodes(filenameWithStatus)
-		if len(cleanFileName) > maxFileNameLength {
-			maxFileNameLength = len(cleanFileName)
-		}
-	}
-
 	fmt.Printf("\nCWD: %s\tTotal Filez %d\n\n", color.New(color.FgHiMagenta).Sprint(cwd), len(files))
-	// fmt.Printf("Total files: %d\n", len(files))
 	fmt.Printf("%-4s\t %-10s\t %-25s%s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
 		filename := printColoredName(file)
 		filenameWithStatus := prependGitStatus(filename, filepath.Join(cwd, file.Name()))
-		fmt.Printf("%-4d\t %-10s\t %-25s\t  %s\n", i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus)
+		detail := ""
+		if detailMode {
+			detail = gitDiffStat(filepath.Join(cwd, file.Name()))
+		}
+		fmt.Printf("%-4d\t %-10s\t %-25s\t  %s %s\n", i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus, detail)
 	}
-	println();
+	println()
 }
+
