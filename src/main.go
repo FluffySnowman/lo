@@ -187,7 +187,6 @@ func main() {
 		if detailMode {
 			detail = gitDiffStat(filepath.Join(dirPath, file.Name()))
 		}
-		// Update the format to separate Git status
 		fmt.Printf("%-4d\t %-10s\t %-25s\t %s%s %s\n", i, formatSize(file.Size()), timeSince(file.ModTime()), gitStatus, filename, detail)
 	}
 	println()
