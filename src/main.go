@@ -50,29 +50,56 @@ func timeSince(modTime time.Time) string {
 	}
 }
 
-func prependGitStatus(filename, path string) string {
+// func prependGitStatus(filename, path string) string {
+// 	cmd := exec.Command("git", "status", "--short", path)
+// 	output, err := cmd.CombinedOutput()
+// 	if err != nil {
+// 		return filename
+// 	}
+// 	status := string(output)
+// 	if len(status) < 2 {
+// 		return filename
+// 	}
+
+// 	statusCode := strings.TrimSpace(status[:2])
+// 	switch statusCode {
+// 	case "M ":
+// 		return color.New(color.FgYellow).Sprintf(" %s", filename)
+// 	case "??":
+// 		return color.New(color.FgRed).Sprintf(" %s", filename)
+// 	case "A ":
+// 		return color.New(color.FgGreen).Sprintf(" %s", filename)
+// 	case "D ":
+// 		return color.New(color.FgMagenta).Sprintf(" %s", filename)
+// 	default:
+// 		return color.New(color.FgCyan).Sprintf(" %s", filename)
+// 	}
+// }
+
+
+func prependGitStatus(path string) string {
 	cmd := exec.Command("git", "status", "--short", path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return filename
+		return "  " // Return two spaces if there's an error or no status.
 	}
 	status := string(output)
 	if len(status) < 2 {
-		return filename
+		return "  " // Return two spaces if no status is detected.
 	}
 
 	statusCode := strings.TrimSpace(status[:2])
 	switch statusCode {
 	case "M ":
-		return color.New(color.FgYellow).Sprintf(" %s", filename)
+		return color.New(color.FgYellow).Sprintf(" ")
 	case "??":
-		return color.New(color.FgRed).Sprintf(" %s", filename)
+		return color.New(color.FgRed).Sprintf(" ")
 	case "A ":
-		return color.New(color.FgGreen).Sprintf(" %s", filename)
+		return color.New(color.FgGreen).Sprintf(" ")
 	case "D ":
-		return color.New(color.FgMagenta).Sprintf(" %s", filename)
+		return color.New(color.FgMagenta).Sprintf(" ")
 	default:
-		return color.New(color.FgCyan).Sprintf(" %s", filename)
+		return color.New(color.FgCyan).Sprintf(" ")
 	}
 }
 
@@ -152,15 +179,16 @@ func main() {
 
 	fmt.Printf("\nCWD: %s\tTotal Files %s\n", color.New(color.FgHiMagenta).Sprint(dirPath), color.New(color.FgHiCyan, color.Italic, color.Bold).Sprintf("%d", len(files)))
 	fmt.Printf("Total Size: %s\n\n", formatSize(totalSize))
-	fmt.Printf("%-4s\t %-10s\t %-25s%s\n", "ID", "Size", "Modified", "File")
+	fmt.Printf("%-4s\t %-10s\t %-25s %s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
 		filename := printColoredName(file)
-		filenameWithStatus := prependGitStatus(filename, filepath.Join(dirPath, file.Name()))
+		gitStatus := prependGitStatus(filepath.Join(dirPath, file.Name()))
 		detail := ""
 		if detailMode {
 			detail = gitDiffStat(filepath.Join(dirPath, file.Name()))
 		}
-		fmt.Printf("%-4d\t %-10s\t %-25s\t  %s %s\n", i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus, detail)
+		// Update the format to separate Git status
+		fmt.Printf("%-4d\t %-10s\t %-25s\t %s%s %s\n", i, formatSize(file.Size()), timeSince(file.ModTime()), gitStatus, filename, detail)
 	}
 	println()
 }
