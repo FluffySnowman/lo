@@ -45,7 +45,7 @@ func timeSince(modTime time.Time) string {
 	case hours < 24:
 		return color.New(color.FgHiYellow).Sprintf("%dh ago", int(hours))
 	default:
-		return color.New(color.FgHiRed).Sprintf("%dd ago", int(hours/24))
+		return color.New(color.FgHiMagenta).Sprintf("%dd ago", int(hours/24))
 	}
 }
 
