@@ -143,7 +143,7 @@ func main() {
 		return files[i].ModTime().After(files[j].ModTime())
 	})
 
-	fmt.Printf("\nCWD: %s\tTotal Filez %d\n\n", color.New(color.FgHiMagenta).Sprint(dirPath), len(files))
+	fmt.Printf("\nCWD: %s\tTotal Filez %s\n\n", color.New(color.FgHiMagenta).Sprint(dirPath), color.New(color.FgHiCyan, color.Italic, color.Bold).Sprintf("%d", len(files)))
 	fmt.Printf("%-4s\t %-10s\t %-25s%s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
 		filename := printColoredName(file)
