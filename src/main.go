@@ -98,21 +98,37 @@ func gitDiffStat(path string) string {
 	return additions + " " + deletions
 }
 
-var detailMode bool
+var (
+	detailMode bool
+	dirPath    string
+)
 
 func init() {
 	flag.BoolVar(&detailMode, "d", false, "Show detailed file change stats")
+	flag.StringVar(&dirPath, "path", ".", "Specify the path to list")
+	flag.StringVar(&dirPath, "p", ".", "Specify the path to list")
 }
 
 func main() {
 	flag.Parse()
-	cwd, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error getting current working directory:", err)
-		return
+
+	if dirPath == "." {
+		cwd, err := os.Getwd()
+		if err != nil {
+			fmt.Println("Error getting current working directory:", err)
+			return
+		}
+		dirPath = cwd
+	} else {
+		absPath, err := filepath.Abs(dirPath)
+		if err != nil {
+			fmt.Println("Error resolving absolute path:", err)
+			return
+		}
+		dirPath = absPath
 	}
 
-	files, err := ioutil.ReadDir(cwd)
+	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		fmt.Println("Error reading directory files:", err)
 		return
@@ -127,17 +143,16 @@ func main() {
 		return files[i].ModTime().After(files[j].ModTime())
 	})
 
-	fmt.Printf("\nCWD: %s\tTotal Filez %d\n\n", color.New(color.FgHiMagenta).Sprint(cwd), len(files))
+	fmt.Printf("\nCWD: %s\tTotal Filez %d\n\n", color.New(color.FgHiMagenta).Sprint(dirPath), len(files))
 	fmt.Printf("%-4s\t %-10s\t %-25s%s\n", "ID", "Size", "Modified", "File")
 	for i, file := range files {
 		filename := printColoredName(file)
-		filenameWithStatus := prependGitStatus(filename, filepath.Join(cwd, file.Name()))
+		filenameWithStatus := prependGitStatus(filename, filepath.Join(dirPath, file.Name()))
 		detail := ""
 		if detailMode {
-			detail = gitDiffStat(filepath.Join(cwd, file.Name()))
+			detail = gitDiffStat(filepath.Join(dirPath, file.Name()))
 		}
 		fmt.Printf("%-4d\t %-10s\t %-25s\t  %s %s\n", i, formatSize(file.Size()), timeSince(file.ModTime()), filenameWithStatus, detail)
 	}
 	println()
 }
-
