@@ -27,18 +27,12 @@ help:
 	@echo "| --------- LO Help list --------- |"
 	@echo ""
 	@echo "Commands:"
-	@printf "  run        [r] \tRuns the rust code\n"
-	@printf "  build      [b] \tBuilds rust code\n"
-	@printf "  buildcopy  [bc]\tBuilds & copies binary to root dir\n"
-	@printf "  watch      [w] \tCargo watch-es the code for hot reloads\n"
+	@printf "  run        [r] \tRuns code\n"
+	@printf "  build      [b] \tBuilds code\n"
 	@printf "  watchexec  [we]\tWatchexec's the code for hot reloads\n"
-	@printf "  clean      [c] \tCleans all leftover build targets & others\n"
 	@printf "  install    [i] \tInstalls LO via the install script\n"
-	@printf "  bci        []  \tBulid copy and install\n"
 	@echo ""
 	@printf "  help       [h] \tShows this thing\n"
-
-
 
 
 run:
@@ -56,5 +50,26 @@ watchexec:
 		echo "| watching code...  |"; \
 		watchexec -r "go run main.go";
 
+build:
+	@echo "| building code     |"
+	cd $(LO_SRC_DIR); \
+		echo "| entered directory |>" $$PWD; \
+		echo "| building code...  |"; \
+		go build -ldflags "-s -w" -trimpath -o lo main.go;
 
+buildcopy:
+	@echo "| building code     |"
+	cd $(LO_SRC_DIR); \
+		echo "| entered directory |>" $$PWD; \
+		echo "| building code...  |"; \
+		go build -ldflags "-s -w" -trimpath -o lo main.go; \
+		cp lo $(ORIGIN_DIR)/lo;
+
+install:
+	@echo "| installing bin... |"
+	bash ./install.sh
+	@echo "| installed bin 👍  |"
+
+
+bci: buildcopy install 
 
