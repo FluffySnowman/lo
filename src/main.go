@@ -72,13 +72,15 @@ func prependGitStatus(filename, path string) string {
 	case "D ":
 		return color.New(color.FgMagenta).Sprintf(" %s", filename)
 	default:
-		return color.New(color.FgBlue).Sprintf(" %s", filename)
+		return color.New(color.FgCyan).Sprintf(" %s", filename)
 	}
 }
 
 func printColoredName(file os.FileInfo) string {
 	if file.IsDir() {
 		return color.New(color.FgHiBlue, color.Bold).Sprint(file.Name())
+	} else if file.Mode().Perm()&0111 != 0 { // Check for executable bit
+		return color.New(color.FgHiGreen).Sprint(file.Name())
 	}
 	return color.New(color.FgWhite).Sprint(file.Name())
 }
