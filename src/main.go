@@ -134,12 +134,19 @@ var (
 
 func init() {
 	flag.BoolVar(&detailMode, "d", false, "Show detailed file change stats")
-	flag.StringVar(&dirPath, "path", ".", "Specify the path to list")
-	flag.StringVar(&dirPath, "p", ".", "Specify the path to list")
+	// flag.StringVar(&dirPath, "path", ".", "Specify the path to list")
+	// flag.StringVar(&dirPath, "p", ".", "Specify the path to list")
 }
 
 func main() {
 	flag.Parse()
+
+	var dirPath string
+	if args := flag.Args(); len(args) > 0 {
+		dirPath = args[0] 
+	} else {
+		dirPath = "." 
+	}
 
 	if dirPath == "." {
 		cwd, err := os.Getwd()
