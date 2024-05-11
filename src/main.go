@@ -134,6 +134,7 @@ var (
 
 func init() {
 	flag.BoolVar(&detailMode, "d", false, "Show detailed file change stats")
+	flag.BoolVar(&detailMode, "o", false, "Same as -d")
 	// flag.StringVar(&dirPath, "path", ".", "Specify the path to list")
 	// flag.StringVar(&dirPath, "p", ".", "Specify the path to list")
 }
